@@ -16,6 +16,6 @@
   (let* ((pos (state-pos st)) (vel (state-vel st)) (cost 1)
     (newVel (list (+ (nth 0 vel) (nth 0 act)) (+ (nth 1 vel) (nth 1 act))))
     (newPos (list (+ (nth 0 pos) (nth 0 newVel)) (+ (nth 1 pos) (nth 1 newVel)))))
-    (when (isObstaclep newPos (state-track st)) (setq newPos pos newVel '(0 0) cost 20))
-    (when (isGoalp (make-state :POS newPos :TRACK (state-track st))) (setq cost -100))
+    (when (isObstaclep newPos (state-track st)) (setf newPos pos newVel '(0 0) cost 20))
+    (when (isGoalp (make-state :POS newPos :TRACK (state-track st))) (setf cost -100))
     (make-STATE :POS newPos :VEL newVel :ACTION act :COST cost :TRACK (state-track st))))
