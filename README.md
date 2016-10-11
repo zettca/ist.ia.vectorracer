@@ -2,7 +2,7 @@
 A Lisp implementation of the racing game VectorRacer.
 
 ### Project Infos
-* **Date:** Semester 1 - 2016/2017 (Dec 2015)
+* **Date:** Semester 1 - 2016/2017
 * **Topic:** VectorRacer implementation
 * **Course:** Inteligência Artificial (IA) | Artificial Intelligence
 * **Course Link:** https://fenix.tecnico.ulisboa.pt/disciplinas/IArt9179/2016-2017/1-semestre
