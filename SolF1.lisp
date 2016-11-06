@@ -2,10 +2,10 @@
 ;;; 78013 Bruno Henriques
 ;;; 82094 Leonardo Vieira
 
-;(load "datastructures.lisp")
-;(load "auxfuncs.lisp")
-(load "datastructures.fas")
-(load "auxfuncs.fas")
+(load "datastructures.lisp")
+(load "auxfuncs.lisp")
+;(load "datastructures.fas")
+;(load "auxfuncs.fas")
 
 (defun isObstaclep (pos track)
     (not (nth (second pos) (nth (first pos) (track-env track)))))
