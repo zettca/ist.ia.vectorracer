@@ -41,7 +41,7 @@
       (null (getTrackContent pos track))))
 
 ;; Pedir 0,4
-(defun isGoalp (st) 
+(defun isGoalp (st)
   "check if st is a solution of the problem"
   (let ((current-position (state-pos st))
 	(track (state-track st)))
@@ -72,42 +72,47 @@
 
 ;; Solution of phase 2
 
-;;; Pedir 
+;;; Pedir
 (defun nextStates (st)
   "generate all possible next states"
+  (when (isObstaclep (state-pos st) (state-track st))
+    (return-from nextStates nil)) ; idk about this
   (let ((actions (possible-actions)) (res '()))
     (dolist (act actions)
-      (setf res (append (list (nextState st act) res))))
+      (push (nextState st act) res))
   res))
 
-;;; limdepthfirstsearch 
+;;; limdepthfirstsearch
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search"
   (let ((fn-nextStates (problem-fn-nextStates problem))
         (fn-isGoal (problem-fn-isGoal problem)))
   
   (defun limdepthfirstsearchAux (node prob n)
-    (let ((st (node-state node))
-          (isCutoff nil))
-    
-    (when (funcall fn-isGoal st)
-      (return-from-limdepthfirstsearchAux (node-state node)))
-    (when (equal n 0)
-      (return-from-limdepthfirstsearchAux "cutoff"))
-    
-    (loop for act in (possible-actions) do
-      (let ((next (make-node :state (nextState st act)))
-            (res (limdepthfirstsearchAux child prob (- n 1))))
-        (when (equal res "cutoff") (setf isCutoff t))
-        (unless (null res) (return-from-limdepthfirstsearchAux res))))
+    (let* ((st (node-state node)) (isCutoff nil))
 
-    (if isCutoff t nil))
+    (cond
+      ((funcall fn-isGoal st) (return-from limdepthfirstsearchAux (list (node-state node))))
+      ((zerop n) (return-from limdepthfirstsearchAux :cutoff))) ; cutoff ?
 
-	(limdepthfirstsearchAux (list (make-node :state (problem-initial-state problem))) problem lim)))
+    ;(format t "DEPTH: ~a | POSITION: ~a~%" n (state-pos (node-state node)))
+    (loop for state in (funcall fn-nextStates st) do
+      (progn
+        (let* ((child (make-node :state state :parent node))
+              (res (limdepthfirstsearchAux child prob (- n 1))))
+          (if (equal res :cutoff)
+            (setf isCutoff t)
+            (unless (null res)
+              (return-from limdepthfirstsearchAux (cons (node-state child) res)))))))
+    (if isCutoff :cutoff nil)))
+
+  ;(list (make-node :state (problem-initial-state problem))))
+  
+	(limdepthfirstsearchAux (make-node :state (problem-initial-state problem)) problem lim)))
 
 
 ;iterlimdepthfirstsearch
 (defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
   "limited depth first search"
-	(list (make-node :state (problem-initial-state problem))) )
-
+	;(list (make-node :state (problem-initial-state problem)))
+	nil)
