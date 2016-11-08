@@ -86,29 +86,35 @@
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search"
   (let ((fn-nextStates (problem-fn-nextStates problem))
-        (fn-isGoal (problem-fn-isGoal problem)))
+        (fn-isGoal (problem-fn-isGoal problem)) (ress))
   
-  (defun limdepthfirstsearchAux (node prob n)
-    (let* ((st (node-state node)) (isCutoff nil))
+  (defun limdepthfirstsearchAux (node n)
+    (let ((st (node-state node)) (isCutoff nil))
 
     (cond
-      ((funcall fn-isGoal st) (return-from limdepthfirstsearchAux (list (node-state node))))
-      ((zerop n) (return-from limdepthfirstsearchAux :cutoff))) ; cutoff ?
+      ((funcall fn-isGoal st) (return-from limdepthfirstsearchAux node))
+      ((zerop n) (return-from limdepthfirstsearchAux :cutoff)))
 
-    ;(format t "DEPTH: ~a | POSITION: ~a~%" n (state-pos (node-state node)))
+    ;(format t "DEPTH: ~a | STATE pos/acc: ~a ~a~%" n (state-pos st) (state-vel st))
     (loop for state in (funcall fn-nextStates st) do
       (progn
         (let* ((child (make-node :state state :parent node))
-              (res (limdepthfirstsearchAux child prob (- n 1))))
+              (res (limdepthfirstsearchAux child (- n 1))))
           (if (equal res :cutoff)
             (setf isCutoff t)
             (unless (null res)
-              (return-from limdepthfirstsearchAux (cons (node-state child) res)))))))
+              (return-from limdepthfirstsearchAux res))))))
     (if isCutoff :cutoff nil)))
-
-  ;(list (make-node :state (problem-initial-state problem))))
   
-	(limdepthfirstsearchAux (make-node :state (problem-initial-state problem)) problem lim)))
+  (setf ress (limdepthfirstsearchAux (make-node :state (problem-initial-state problem)) lim))
+  (when (equal (type-of ress) 'NODE) ; fill path until start-node (root)
+    (let ((iterNode ress) (resPath nil))
+      (push (node-state iterNode) resPath)
+      (loop while (not (null (node-parent iterNode))) do
+        (setf iterNode (node-parent iterNode))
+        (push (node-state iterNode) resPath))
+      (setf ress resPath)))
+	ress))
 
 
 ;iterlimdepthfirstsearch
