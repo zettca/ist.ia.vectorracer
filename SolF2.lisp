@@ -91,34 +91,37 @@
   (defun limdepthfirstsearchAux (node n)
     (let ((st (node-state node)) (isCutoff nil))
 
-    (cond
-      ((funcall fn-isGoal st) (return-from limdepthfirstsearchAux node))
-      ((zerop n) (return-from limdepthfirstsearchAux :cutoff)))
-
-    ;(format t "DEPTH: ~a | STATE pos/acc: ~a ~a~%" n (state-pos st) (state-vel st))
-    (loop for state in (funcall fn-nextStates st) do
-      (progn
-        (let* ((child (make-node :state state :parent node))
-              (res (limdepthfirstsearchAux child (- n 1))))
-          (if (equal res :cutoff)
-            (setf isCutoff t)
-            (unless (null res)
-              (return-from limdepthfirstsearchAux res))))))
-    (if isCutoff :cutoff nil)))
+      (cond
+        ((funcall fn-isGoal st) (return-from limdepthfirstsearchAux node))
+        ((zerop n) (return-from limdepthfirstsearchAux :cutoff)))
+  
+      ;(format t "DEPTH: ~a | POS/VEL: ~a ~a~%" n (state-pos st) (state-vel st))
+      (loop for state in (funcall fn-nextStates st) do
+        (progn
+          (let* ((child (make-node :state state :parent node))
+                (res (limdepthfirstsearchAux child (- n 1))))
+            (if (equal res :cutoff)
+              (setf isCutoff t)
+              (unless (null res)
+                (return-from limdepthfirstsearchAux res))))))
+      (if isCutoff :cutoff nil)))
   
   (setf ress (limdepthfirstsearchAux (make-node :state (problem-initial-state problem)) lim))
   (when (equal (type-of ress) 'NODE) ; fill path until start-node (root)
     (let ((iterNode ress) (resPath nil))
       (push (node-state iterNode) resPath)
-      (loop while (not (null (node-parent iterNode))) do
+      (loop until (null (node-parent iterNode)) do
         (setf iterNode (node-parent iterNode))
         (push (node-state iterNode) resPath))
       (setf ress resPath)))
-	ress))
+	  ress))
 
 
 ;iterlimdepthfirstsearch
 (defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
   "limited depth first search"
-	;(list (make-node :state (problem-initial-state problem)))
-	nil)
+  (let* ((i 0) (res (limdepthfirstsearch problem i)))
+    (loop until (equal (type-of res) 'CONS) do
+      (setf i (+ i 1))
+      (setf res (limdepthfirstsearch problem i)))
+	  res))
