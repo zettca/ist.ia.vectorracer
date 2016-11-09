@@ -83,7 +83,7 @@
   res))
 
 ;;; limdepthfirstsearch
-(defun limdepthfirstsearch (problem lim &key cutoff?)
+(defun limdepthfirstsearch (problem lim)
   "limited depth first search"
   (defun ldfsAux (node i)
     (let ((state (node-state node)) (cut? nil))
@@ -110,10 +110,9 @@
 
 
 ;iterlimdepthfirstsearch
-(defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
+(defun iterlimdepthfirstsearch (problem)
   "limited depth first search"
-  (let* ((i 0) (res (limdepthfirstsearch problem i)))
-    (loop until (eq (type-of res) 'CONS) do
-      (setf i (+ i 1))
-      (setf res (limdepthfirstsearch problem i)))
-	  res))
+  (loop for i from 0 to most-positive-fixnum do
+    (let ((res (limdepthfirstsearch problem i)))
+      (unless (eq res :CORTE) (return-from iterlimdepthfirstsearch res))))
+  res)
