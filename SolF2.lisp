@@ -1,3 +1,7 @@
+;;; IA 2016/2017 tg046
+;;; 78013 Bruno Henriques
+;;; 82094 Leonardo Vieira
+
 (load "datastructures.lisp")
 (load "auxfuncs.lisp")
 
@@ -114,5 +118,4 @@
   "limited depth first search"
   (loop for i from 0 to most-positive-fixnum do
     (let ((res (limdepthfirstsearch problem i)))
-      (unless (eq res :CORTE) (return-from iterlimdepthfirstsearch res))))
-  res)
+      (unless (eq res :CORTE) (return-from iterlimdepthfirstsearch res)))))
