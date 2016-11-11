@@ -79,18 +79,14 @@
 ;;; Pedir
 (defun nextStates (st)
   "generate all possible next states"
-  (when (isObstaclep (state-pos st) (state-track st))
-    (return-from nextStates nil)) ; idk about this
-  (let ((actions (possible-actions)) (res '()))
-    (dolist (act actions)
-      (push (nextState st act) res))
-  res))
+  (reverse (loop for act in (possible-actions)
+    collect (nextState st act))))
 
 ;;; limdepthfirstsearch
 (defun limdepthfirstsearch (problem lim)
   "limited depth first search"
   (defun ldfsAux (node i)
-    (let ((state (node-state node)) (cut? nil))
+    (let ((state (node-state node)) (fail? nil))
     
       (cond
         ((funcall (problem-fn-isGoal problem) state) (return-from ldfsAux node))
@@ -99,17 +95,16 @@
       (loop for st in (funcall (problem-fn-nextStates problem) state) do
         (let* ((child (make-node :state st :parent node)) (res (ldfsAux child (- i 1))))
           (if (eq res :corte)
-            (setf cut? :corte)
+            (setf fail? :corte)
             (unless (null res) (return-from ldfsAux res)))))
-      cut?))
-  
-  (let ((res (ldfsAux (make-node :state (problem-initial-state problem)) lim)) (resPath))
+      fail?))
+
+  (let ((res (ldfsAux (make-node :state (problem-initial-state problem)) lim)))
     (when (eq (type-of res) 'NODE) ; fill path until start-node (root)
-      (push (node-state res) resPath)
-      (loop until (null (node-parent res)) do
-        (setf res (node-parent res))
-        (push (node-state res) resPath))
-      (setf res resPath))
+      (setf res (list res))
+      (loop until (null (node-parent (first res))) do
+        (push (node-parent (first res)) res))
+      (setf res (map 'list #'(lambda (el) (node-state el)) res)))
     res))
 
 
