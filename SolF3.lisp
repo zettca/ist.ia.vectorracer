@@ -70,36 +70,52 @@
 
 ;; Solution of phase 2
 
-;;; Pedir 
+;;; Pedir
 (defun nextStates (st)
   "generate all possible next states"
-	(list st))
+  (reverse (loop for act in (possible-actions)
+    collect (nextState st act))))
 
-;;; limdepthfirstsearch 
+;;; limdepthfirstsearch
 (defun limdepthfirstsearch (problem lim)
-  "limited depth first search
-     st - initial state
-     problem - problem information
-     lim - depth limit"
-	(list (make-node :state (problem-initial-state problem))) )
-				      
+  "limited depth first search"
+  (defun ldfsAux (node i)
+    (let ((state (node-state node)) (fail? nil))
+
+      (cond
+        ((funcall (problem-fn-isGoal problem) state) (return-from ldfsAux node))
+        ((zerop i) (return-from ldfsAux :corte)))
+
+      (loop for st in (funcall (problem-fn-nextStates problem) state) do
+        (let* ((child (make-node :state st :parent node)) (res (ldfsAux child (- i 1))))
+          (if (eq res :corte)
+            (setf fail? :corte)
+            (unless (null res) (return-from ldfsAux res)))))
+      fail?))
+
+  (let ((res (ldfsAux (make-node :state (problem-initial-state problem)) lim)))
+    (when (eq (type-of res) 'NODE) ; fill path until start-node (root)
+      (setf res (list res))
+      (loop until (null (node-parent (first res))) do
+        (push (node-parent (first res)) res))
+      (setf res (map 'list #'(lambda (el) (node-state el)) res)))
+    res))
+
 
 ;iterlimdepthfirstsearch
 (defun iterlimdepthfirstsearch (problem)
-  "limited depth first search
-     st - initial state
-     problem - problem information
-     lim - limit of depth iterations"
-	(list (make-node :state (problem-initial-state problem))) )
-	
+  "limited depth first search"
+  (loop for i from 0 to most-positive-fixnum do
+    (let ((res (limdepthfirstsearch problem i)))
+      (unless (eq res :CORTE) (return-from iterlimdepthfirstsearch res)))))
+
+
 ;; Solution of phase 3
 
 ;; Heuristic
 (defun compute-heuristic (st)
 	0)
-	  
-  
-	    
+
 ;;; A*
 (defun a* (problem)
   (list (make-node :state (problem-initial-state problem))))
