@@ -26,6 +26,12 @@
 (defun vel-c (pos)
   (second pos))
 
+(defun nodeToList (node)
+  (let ((res (list node)))
+    (loop until (null (node-parent (first res))) do
+      (push (node-parent (first res)) res))
+    (setf res (mapcar #'(lambda (el) (node-state el)) res))
+    res))
 
 ;; Solution of phase 1
 
@@ -95,10 +101,7 @@
 
   (let ((res (ldfsAux (make-node :state (problem-initial-state problem)) lim)))
     (when (eq (type-of res) 'NODE) ; fill path until start-node (root)
-      (setf res (list res))
-      (loop until (null (node-parent (first res))) do
-        (push (node-parent (first res)) res))
-      (setf res (map 'list #'(lambda (el) (node-state el)) res)))
+      (setf res (nodeToList res)))
     res))
 
 ;iterlimdepthfirstsearch
@@ -137,13 +140,6 @@
 
     (nth (second sPos) (nth (first sPos) map))))
 
-(defun nodeToList (node)
-  (let ((res (list node)))
-    (loop until (null (node-parent (first res))) do
-      (push (node-parent (first res)) res))
-    (setf res (mapcar #'(lambda (el) (node-state el)) res))
-    res))
-
 ;;; A*
 (defun a* (problem)
   (let* ((openList nil)
@@ -151,7 +147,7 @@
     (nextStates (problem-fn-nextStates problem))
     (isGoal (problem-fn-isGoal problem))
     (h (problem-fn-h problem)))
-    
+
     (defun aAux (node)
       (when (funcall isGoal (node-state node)) (return-from aAux node))
       (loop for st in (funcall nextStates (node-state node)) do
