@@ -101,7 +101,6 @@
       (setf res (map 'list #'(lambda (el) (node-state el)) res)))
     res))
 
-
 ;iterlimdepthfirstsearch
 (defun iterlimdepthfirstsearch (problem)
   "limited depth first search"
@@ -114,8 +113,61 @@
 
 ;; Heuristic
 (defun compute-heuristic (st)
-	0)
+  (let* ((trk (state-track st)) (sPos (state-pos st))
+        (map (copy-list (track-env trk))) (ends (track-endpositions trk)))
+
+    (defun adjposs (pos)
+      (loop for adj in '((0 1) (1 0) (-1 0) (0 -1) (1 -1) (-1 1) (1 1) (-1 -1)) collect
+        (mapcar #'+ pos adj)))
+
+    (defun updateAjds (pos dist)
+      (setf (nth (second pos) (nth (first pos) map)) dist)
+      ;(format t "POS: ~a DIST: ~a~%" pos dist)
+      (let ((distt (+ dist 1)) (toFollow))
+        (loop for adjPos in (adjposs pos) do
+          (let ((adjVal (nth (second adjPos) (nth (first adjPos) map))))
+            (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
+              (updateAjds adjPos distt))))))
+
+    (loop for end in ends do
+      (updateAjds end 0))
+
+    (dotimes (i (first (track-size trk)))
+      (setf (nth i map) (substitute most-positive-fixnum nil (nth i map))))
+
+    (nth (second sPos) (nth (first sPos) map))))
+
+(defun nodeToList (node)
+  (let ((res (list node)))
+    (loop until (null (node-parent (first res))) do
+      (push (node-parent (first res)) res))
+    (setf res (mapcar #'(lambda (el) (node-state el)) res))
+    res))
 
 ;;; A*
 (defun a* (problem)
-  (list (make-node :state (problem-initial-state problem))))
+  (let* ((openList nil)
+    (state (problem-initial-state problem))
+    (nextStates (problem-fn-nextStates problem))
+    (isGoal (problem-fn-isGoal problem))
+    (h (problem-fn-h problem)))
+    
+    (defun aAux (node)
+      (when (funcall isGoal (node-state node)) (return-from aAux node))
+      (loop for st in (funcall nextStates (node-state node)) do
+        (unless (equal (state-pos st) (state-pos (node-state node)))
+          (push (make-node :parent node :state st :h (funcall h st)
+            :g (+ (state-cost (node-state node)) (state-cost st))
+            :f (+ (state-cost (node-state node)) (state-cost st) (funcall h st)))
+            openList)))
+
+      (let ((best (first openList)))
+        (loop for open in openList do
+          (when (< (node-f open) (node-f best)) (setf best open)))
+        
+        ;(format t "POS: ~a VEL: ~a G: ~a F: ~a ~%~%" (state-pos (node-state best)) (state-vel (node-state best)) (node-g best) (node-f best))
+        (unless best return-from aAux nil)
+        (setf openList (remove best openList))
+        (aAux best)))
+
+    (nodeToList (aAux (make-node :parent nil :state state :g 0 :h (funcall h state) :f (+ 0 (funcall h state)))))))
