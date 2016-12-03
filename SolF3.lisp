@@ -1,3 +1,7 @@
+;;; IA 2016/2017 tg046
+;;; 78013 Bruno Henriques
+;;; 82094 Leonardo Vieira
+
 (load "datastructures.lisp")
 (load "auxfuncs.lisp")
 
@@ -167,3 +171,6 @@
         (aAux best)))
 
     (nodeToList (aAux (make-node :parent nil :state state :g 0 :h (funcall h state) :f (+ 0 (funcall h state)))))))
+
+(defun best-search (problem)
+  (a* problem))
