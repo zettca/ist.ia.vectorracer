@@ -117,32 +117,40 @@
 
 
 ;; Solution of phase 3
+(defun get2d (lst pos)
+  (nth (second pos) (nth (first pos) lst)))
+
+(defun setf2d (lst pos val)
+  (setf (nth (second pos) (nth (first pos) lst)) val))
+
+(defun validPosp (pos)
+  (and (>= (first pos) 0) (>= (second pos) 0)))
+
+(defun adjPoss (pos)
+  (loop for adj in '((0 1) (1 0) (-1 0) (0 -1) (1 -1) (-1 1) (1 1) (-1 -1))
+    when (validPosp (mapcar #'+ pos adj)) collect (mapcar #'+ pos adj)))
+
+(defun updateAjds (map pos dist)
+  (setf2d map pos dist)
+  (let ((distt (+ dist 1)))
+    (loop for adjPos in (adjPoss pos) do
+      (let ((adjVal (get2d map adjPos)))
+        (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
+          (updateAjds map adjPos distt))))))
+
+(defun compute-costs (track)
+  (let ((map (copy-list (track-env track))))
+    (loop for end in (track-endpositions track) do
+      (updateAjds map end 0))
+
+    (dotimes (i (first (track-size track)))
+      (setf (nth i map) (substitute most-positive-fixnum nil (nth i map))))
+    map))
+
 
 ;; Heuristic
 (defun compute-heuristic (st)
-  (let* ((trk (state-track st)) (sPos (state-pos st))
-        (map (copy-list (track-env trk))) (ends (track-endpositions trk)))
-
-    (defun adjposs (pos)
-      (loop for adj in '((0 1) (1 0) (-1 0) (0 -1) (1 -1) (-1 1) (1 1) (-1 -1)) collect
-        (mapcar #'+ pos adj)))
-
-    (defun updateAjds (pos dist)
-      (setf (nth (second pos) (nth (first pos) map)) dist)
-      ;(format t "POS: ~a DIST: ~a~%" pos dist)
-      (let ((distt (+ dist 1)))
-        (loop for adjPos in (adjposs pos) do
-          (let ((adjVal (nth (second adjPos) (nth (first adjPos) map))))
-            (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
-              (updateAjds adjPos distt))))))
-
-    (loop for end in ends do
-      (updateAjds end 0))
-
-    (dotimes (i (first (track-size trk)))
-      (setf (nth i map) (substitute most-positive-fixnum nil (nth i map))))
-
-    (nth (second sPos) (nth (first sPos) map))))
+    (get2d (compute-costs (state-track st)) (state-pos st)))
 
 ;;; A*
 (defun a* (problem)
@@ -165,12 +173,12 @@
         (loop for open in openList do
           (when (< (node-f open) (node-f best)) (setf best open)))
         
-        ;(format t "POS: ~a VEL: ~a G: ~a F: ~a ~%~%" (state-pos (node-state best)) (state-vel (node-state best)) (node-g best) (node-f best))
         (when (null best) (return-from aAux nil))
         (setf openList (remove best openList))
+        ;(format t "POS: ~a H: ~a F: ~a~%" (state-pos (node-state best)) (node-h best) (node-f best))
         (aAux best)))
 
-    (nodeToList (aAux (make-node :parent nil :state state :g 0 :h (funcall h state) :f (+ 0 (funcall h state)))))))
+    (nodeToList (aAux (make-node :parent nil :state state :g 0 :h (funcall h state) :f (funcall h state))))))
 
 (defun best-search (problem)
   (a* problem))
