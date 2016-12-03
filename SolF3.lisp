@@ -130,7 +130,7 @@
     (defun updateAjds (pos dist)
       (setf (nth (second pos) (nth (first pos) map)) dist)
       ;(format t "POS: ~a DIST: ~a~%" pos dist)
-      (let ((distt (+ dist 1)) (toFollow))
+      (let ((distt (+ dist 1)))
         (loop for adjPos in (adjposs pos) do
           (let ((adjVal (nth (second adjPos) (nth (first adjPos) map))))
             (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
@@ -166,7 +166,7 @@
           (when (< (node-f open) (node-f best)) (setf best open)))
         
         ;(format t "POS: ~a VEL: ~a G: ~a F: ~a ~%~%" (state-pos (node-state best)) (state-vel (node-state best)) (node-g best) (node-f best))
-        (unless best return-from aAux nil)
+        (when (null best) (return-from aAux nil))
         (setf openList (remove best openList))
         (aAux best)))
 
