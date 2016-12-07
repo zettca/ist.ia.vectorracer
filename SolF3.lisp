@@ -138,23 +138,19 @@
         (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
           (updateAjds map adjPos distt))))))
 
-(defun compute-costs (track)
-  (let ((map (copy-list (track-env track))))
+;; Heuristic
+(defun compute-heuristic (st)
+  (let ((map (copy-list (track-env (state-track st)))))
     (loop for end in (track-endpositions track) do
       (updateAjds map end 0))
 
     (dotimes (i (first (track-size track)))
       (setf (nth i map) (substitute most-positive-fixnum nil (nth i map))))
-    map))
-
-
-;; Heuristic
-(defun compute-heuristic (st)
-    (get2d (compute-costs (state-track st)) (state-pos st)))
+    (get2d map (state-pos st))))
 
 ;;; A*
 (defun a* (problem)
-  (let* ((openList nil)
+  (let ((openList nil)
     (state (problem-initial-state problem))
     (nextStates (problem-fn-nextStates problem))
     (isGoal (problem-fn-isGoal problem))
