@@ -16,6 +16,7 @@
 (defvar *s* nil)
 (defvar *p1* nil)
 
+#|||
 (setf *t* (loadtrack "track21.txt"))
 (setf *s* (initial-state *t*))
 (setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
@@ -52,7 +53,7 @@
     (states-to-list (a* *p*))
     (let ((real2 (get-internal-real-time)))
     (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
-    
+|||#
 (setf *t* (loadtrack "track24.txt"))
 (setf *s* (initial-state *t*))
 (setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
