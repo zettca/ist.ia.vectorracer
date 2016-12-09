@@ -12,60 +12,46 @@
 (defun initial-state (track)
   (make-state :pos (track-startpos track) :vel (make-vel 0 0) :action nil :cost 0 :track track))
 
+(defun printtrack (track)
+    (loop for line in (track-env track) do
+        (print (substitute 'X nil line))))
+
+(defun testTrack (trackname)
+    ;(format t "~&========== ~a ==========~&" trackname)
+    (setf *t* (loadtrack trackname))
+    (setf *s* (initial-state *t*))
+    (setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
+    (let ((time1 (get-internal-real-time)) (time2) (time3) (res))
+        (format t "~&Calculating Heuristic ")
+        (compute-heuristic *s*)
+        (setf time2 (get-internal-real-time))
+        (format t "[~f seconds]~%" (/ (- time2 time1) internal-time-units-per-second))
+        (format t "~&Calculating A* search ")
+        (setf res (a* *p*))
+        (setf time3 (get-internal-real-time))
+        (format t "[~f seconds]~%" (/ (- time3 time2) internal-time-units-per-second))
+        ;(states-to-list res)
+        ))
+
 (defvar *t* nil)
 (defvar *s* nil)
-(defvar *p1* nil)
+(defvar *p* nil)
 
+
+; EASY TRACKS
+(testTrack "track0.txt")
+(testTrack "track9.txt")
+; MEDIUM TRACKS
+(testTrack "track20.txt")
+(testTrack "track22.txt")
+(testTrack "track24.txt")
+(testTrack "track26.txt")
+; HARD TRACKS
+(testTrack "track32.txt")
+(testTrack "track34.txt")
+
+; CRAZY TRACKS
+;(testTrack "track40.txt")
+(testTrack "track42.txt")
 #|||
-(setf *t* (loadtrack "track21.txt"))
-(setf *s* (initial-state *t*))
-(setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
-
-(let ((real1 (get-internal-real-time)))
-    (format t "~&Track 21 - Heuristic~&")
-    (compute-heuristic *s*)
-    (format t "~&Track 21 - A*~&")
-    (states-to-list (a* *p*))
-    (let ((real2 (get-internal-real-time)))
-    (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
-
-
-(setf *t* (loadtrack "track22.txt"))
-(setf *s* (initial-state *t*))
-(setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
-
-(let ((real1 (get-internal-real-time)))
-    (format t "~&Track 22 - Heuristic~&")
-    (compute-heuristic *s*)
-    (format t "~&Track 22 - A*~&")
-    (states-to-list (a* *p*))
-    (let ((real2 (get-internal-real-time)))
-    (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
-    
-(setf *t* (loadtrack "track23.txt"))
-(setf *s* (initial-state *t*))
-(setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
-
-(let ((real1 (get-internal-real-time)))
-    (format t "~&Track 23 - Heuristic~&")
-    (compute-heuristic *s*)
-    (format t "~&Track 23 - A*~&")
-    (states-to-list (a* *p*))
-    (let ((real2 (get-internal-real-time)))
-    (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
 |||#
-(setf *t* (loadtrack "track24.txt"))
-(setf *s* (initial-state *t*))
-(setf *p* (make-problem :initial-state (initial-state *t*) :fn-isGoal #'isGoalp :fn-nextstates #'nextStates :fn-h #'compute-heuristic))
-
-(let ((real1 (get-internal-real-time)))
-    (format t "~&Track 24 - Heuristic~&")
-    (compute-heuristic *s*)
-    (format t "~&Track 24 - A*~&")
-    (states-to-list (a* *p*))
-    (let ((real2 (get-internal-real-time)))
-    (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
-
-; HEURISTICS
-; SPEED = BAD? (avg/2)?
-; ???
