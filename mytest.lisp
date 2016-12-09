@@ -34,7 +34,6 @@
         (setf resA (a* *p*))
         (setf time4 (get-internal-real-time))
         (format t "[~f seconds]~%" (/ (- time4 time3) internal-time-units-per-second))
-        ;(states-to-list resA)
         ))
 
 (defvar *t* nil)

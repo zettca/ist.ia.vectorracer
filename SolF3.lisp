@@ -175,8 +175,7 @@
     (defun aAux (node)
       (when (funcall isGoal (node-state node)) (return-from aAux node))
       (loop for st in (funcall nextStates (node-state node)) do
-        (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
-          :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
+        (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st)) :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
 
       (when (null frontier) (return-from aAux nil))
       (let ((best (first frontier)))
@@ -196,19 +195,16 @@
     (isGoal (problem-fn-isGoal problem))
     (h (problem-fn-h problem)))
 
+    (defun mergeToFrontier (node)
+      (merge 'list (list node) frontier #'(lambda (n1 n2) (< (node-f n1) (node-f n2)))))
+
     (defun bestAux (node)
       (when (funcall isGoal (node-state node)) (return-from bestAux node))
       (loop for st in (funcall nextStates (node-state node))
         when (not (equal (state-pos st) (state-pos (node-state node)))) do
-          (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
-            :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
+          (setf frontier (mergeToFrontier (make-node :parent node :state st :g (+ (node-g node) (state-cost st)):f (+ (node-g node) (state-cost st) (funcall h st))))))
 
       (when (null frontier) (return-from bestAux nil))
-      (let ((best (first frontier)))
-        (loop for open in frontier do
-          (when (< (node-f open) (node-f best)) (setf best open)))
-        
-        (setf frontier (remove best frontier))
-        (bestAux best)))
+      (bestAux (pop frontier)))
 
     (nodeToStateList (bestAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
