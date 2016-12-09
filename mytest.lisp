@@ -26,12 +26,12 @@
         (compute-heuristic *s*)
         (setf time2 (get-internal-real-time))
         (format t "[~f seconds]~%" (/ (- time2 time1) internal-time-units-per-second))
-        (format t "~&Calculating A* search   ")
-        (setf resA (a* *p*))
-        (setf time3 (get-internal-real-time))
-        (format t "[~f seconds]~%" (/ (- time3 time2) internal-time-units-per-second))
         (format t "~&Calculating best-search ")
         (setf resB (best-search *p*))
+        (setf time3 (get-internal-real-time))
+        (format t "[~f seconds]~%" (/ (- time3 time2) internal-time-units-per-second))
+        (format t "~&Calculating A* search   ")
+        (setf resA (a* *p*))
         (setf time4 (get-internal-real-time))
         (format t "[~f seconds]~%" (/ (- time4 time3) internal-time-units-per-second))
         ;(states-to-list resA)
@@ -52,9 +52,3 @@
 ; HARD TRACKS
 (testTrack "track32.txt")
 (testTrack "track34.txt")
-
-; CRAZY TRACKS
-;(testTrack "track40.txt")
-(testTrack "track42.txt")
-#|||
-|||#
