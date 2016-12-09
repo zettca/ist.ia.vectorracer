@@ -30,12 +30,11 @@
 (defun vel-c (pos)
   (second pos))
 
-(defun nodeToList (node)
+(defun nodeToStateList (node)
   (let ((res (list node)))
     (loop until (null (node-parent (first res))) do
       (push (node-parent (first res)) res))
-    (setf res (mapcar #'(lambda (el) (node-state el)) res))
-    res))
+    (mapcar #'(lambda (node) (node-state node)) res)))
 
 ;; Solution of phase 1
 
@@ -105,7 +104,7 @@
 
   (let ((res (ldfsAux (make-node :state (problem-initial-state problem)) lim)))
     (when (eq (type-of res) 'NODE) ; fill path until start-node (root)
-      (setf res (nodeToList res)))
+      (setf res (nodeToStateList res)))
     res))
 
 ;iterlimdepthfirstsearch
@@ -141,9 +140,8 @@
   "BFS implementation for computing heuristic"
   (defun validAdjs (poss)
     (defun setPosRetAdjs (pos) (set2d map pos dist) (adjPoss pos))
-    (loop for pos in poss
-      when (worseAdjPosp (get2d map pos) dist)
-        append (setPosRetAdjs pos)))
+    (loop for pos in poss when (worseAdjPosp (get2d map pos) dist)
+      append (setPosRetAdjs pos)))
   (let ((newAdjs (remove-duplicates (validAdjs adjs) :test #'equal)))
     (when (> (length newAdjs) 0) (update-bfs map newAdjs (+ dist 1)))))
 
@@ -154,16 +152,20 @@
     (when (worseAdjPosp (get2d map adj) (+ dist 1))
       (update-dfs map adj (+ dist 1)))))
 
-;; Heuristic
-(defun compute-heuristic (st)
+(defun compute-heuristic-map (st)
   "returns the shortest distance to the closest endposition for a given state"
-  (let ((map (track-env (state-track st))))
+  (let ((map (copy-list (track-env (state-track st)))))
     (loop for end in (track-endpositions (state-track st)) do
       ;(update-dfs map end 0))  ; DFS IMPLEMENTATION
       (set2d map end 0) (update-bfs map (adjPoss end) 1)) ; BFS IMPLEMENTATION
-    (loop for line in map do
-      (setf line (substitute-if most-positive-fixnum #'notintegerp line)))
-    (get2d map (state-pos st))))
+    (dotimes (i (first (track-size (state-track st))))
+      (setf (nth i map) (substitute-if most-positive-fixnum #'notintegerp (nth i map))))
+    map))
+
+;; Heuristic
+(defun compute-heuristic (st)
+  "returns the shortest distance to the closest endposition for a given state"
+  (get2d (compute-heuristic-map st) (state-pos st)))
 
 ;;; A*
 (defun a* (problem)
@@ -188,7 +190,7 @@
         (setf frontier (remove best frontier))
         (aAux best)))
 
-    (nodeToList (aAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
+    (nodeToStateList (aAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
 
 (defun best-search (problem)
   "solves a problem using an alternative search returning a list of states"
@@ -198,18 +200,18 @@
     (isGoal (problem-fn-isGoal problem))
     (h (problem-fn-h problem)))
 
-    (defun aAux (node)
-      (when (funcall isGoal (node-state node)) (return-from aAux node))
-      (loop for st in (funcall nextStates (node-state node)) do
+    (defun bestAux (node)
+      (when (funcall isGoal (node-state node)) (return-from bestAux node))
+      (loop for st in (funcall nextStates (node-state node)) when (not (equal (state-pos st) (state-pos (node-state node)))) do
         (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
           :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
 
       (let ((best (first frontier)))
         (loop for open in frontier do
-          (when (< (node-f open)(node-f best)) (setf best open)))
+          (when (< (node-f open) (node-f best)) (setf best open)))
         
-        (when (null best) (return-from aAux nil))
+        (when (null best) (return-from bestAux nil))
         (setf frontier (remove best frontier))
-        (aAux best)))
+        (bestAux best)))
 
-    (nodeToList (aAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
+    (nodeToStateList (bestAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
