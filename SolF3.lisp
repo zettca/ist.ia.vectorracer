@@ -117,40 +117,58 @@
 
 
 ;; Solution of phase 3
-(defun get2d (lst pos)
-  (nth (second pos) (nth (first pos) lst)))
+(defun notintegerp (el)
+  (not (integerp el)))
 
-(defun setf2d (lst pos val)
-  (setf (nth (second pos) (nth (first pos) lst)) val))
+(defun get2d (lst2d pos)
+  (nth (pos-c pos) (nth (pos-l pos) lst2d)))
+
+(defun set2d (lst2d pos val)
+  (setf (nth (pos-c pos) (nth (pos-l pos) lst2d)) val))
 
 (defun validPosp (pos)
-  (and (>= (first pos) 0) (>= (second pos) 0)))
+  (and (>= (pos-l pos) 0) (>= (pos-c pos) 0)))
+
+(defun worseAdjPosp (value dist)
+  (or (eq value t) (and value (< dist value))))
 
 (defun adjPoss (pos)
-  (loop for adj in '((0 1) (1 0) (-1 0) (0 -1) (1 -1) (-1 1) (1 1) (-1 -1))
+  "returns all valid adjacent positions given a position"
+  (loop for adj in '((1 -1) (-1 1) (1 1) (-1 -1) (0 1) (1 0) (-1 0) (0 -1))
     when (validPosp (mapcar #'+ pos adj)) collect (mapcar #'+ pos adj)))
 
-(defun updateAjds (map pos dist)
-  (setf2d map pos dist)
-  (let ((distt (+ dist 1)))
-    (loop for adjPos in (adjPoss pos) do
-      (let ((adjVal (get2d map adjPos)))
-        (when (or (eq adjVal t) (and adjVal (< distt adjVal)))
-          (updateAjds map adjPos distt))))))
+(defun update-bfs (map adjs dist)
+  "BFS implementation for computing heuristic"
+  (defun validAdjs (poss)
+    (defun setPosRetAdjs (pos) (set2d map pos dist) (adjPoss pos))
+    (loop for pos in poss
+      when (worseAdjPosp (get2d map pos) dist)
+        append (setPosRetAdjs pos)))
+  (let ((newAdjs (remove-duplicates (validAdjs adjs) :test #'equal)))
+    (when (> (length newAdjs) 0) (update-bfs map newAdjs (+ dist 1)))))
+
+(defun update-dfs (map pos dist)
+  "DFS implementation for computing heuristic"
+  (set2d map pos dist)
+  (loop for adj in (adjPoss pos) do
+    (when (worseAdjPosp (get2d map adj) (+ dist 1))
+      (update-dfs map adj (+ dist 1)))))
 
 ;; Heuristic
 (defun compute-heuristic (st)
-  (let ((map (copy-list (track-env (state-track st)))))
-    (loop for end in (track-endpositions track) do
-      (updateAjds map end 0))
-
-    (dotimes (i (first (track-size track)))
-      (setf (nth i map) (substitute most-positive-fixnum nil (nth i map))))
+  "returns the shortest distance to the closest endposition for a given state"
+  (let ((map (track-env (state-track st))))
+    (loop for end in (track-endpositions (state-track st)) do
+      ;(update-dfs map end 0))  ; DFS IMPLEMENTATION
+      (set2d map end 0) (update-bfs map (adjPoss end) 1)) ; BFS IMPLEMENTATION
+    (loop for line in map do
+      (setf line (substitute-if most-positive-fixnum #'notintegerp line)))
     (get2d map (state-pos st))))
 
 ;;; A*
 (defun a* (problem)
-  (let ((openList nil)
+  "solves a problem using A* search returning a list of states"
+  (let ((frontier nil)
     (state (problem-initial-state problem))
     (nextStates (problem-fn-nextStates problem))
     (isGoal (problem-fn-isGoal problem))
@@ -159,22 +177,39 @@
     (defun aAux (node)
       (when (funcall isGoal (node-state node)) (return-from aAux node))
       (loop for st in (funcall nextStates (node-state node)) do
-        (unless (equal (state-pos st) (state-pos (node-state node)))
-          (push (make-node :parent node :state st :h (funcall h st)
-            :g (+ (state-cost (node-state node)) (state-cost st))
-            :f (+ (state-cost (node-state node)) (state-cost st) (funcall h st)))
-            openList)))
+        (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
+          :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
 
-      (let ((best (first openList)))
-        (loop for open in openList do
-          (when (< (node-f open) (node-f best)) (setf best open)))
+      (let ((best (first frontier)))
+        (loop for open in frontier do
+          (when (< (node-f open)(node-f best)) (setf best open)))
         
         (when (null best) (return-from aAux nil))
-        (setf openList (remove best openList))
-        ;(format t "POS: ~a H: ~a F: ~a~%" (state-pos (node-state best)) (node-h best) (node-f best))
+        (setf frontier (remove best frontier))
         (aAux best)))
 
-    (nodeToList (aAux (make-node :parent nil :state state :g 0 :h (funcall h state) :f (funcall h state))))))
+    (nodeToList (aAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
 
 (defun best-search (problem)
-  (a* problem))
+  "solves a problem using an alternative search returning a list of states"
+  (let ((frontier nil)
+    (state (problem-initial-state problem))
+    (nextStates (problem-fn-nextStates problem))
+    (isGoal (problem-fn-isGoal problem))
+    (h (problem-fn-h problem)))
+
+    (defun aAux (node)
+      (when (funcall isGoal (node-state node)) (return-from aAux node))
+      (loop for st in (funcall nextStates (node-state node)) do
+        (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
+          :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
+
+      (let ((best (first frontier)))
+        (loop for open in frontier do
+          (when (< (node-f open)(node-f best)) (setf best open)))
+        
+        (when (null best) (return-from aAux nil))
+        (setf frontier (remove best frontier))
+        (aAux best)))
+
+    (nodeToList (aAux (make-node :parent nil :state state :g 0 :f (funcall h state))))))
