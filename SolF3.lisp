@@ -152,20 +152,16 @@
     (when (worseAdjPosp (get2d map adj) (+ dist 1))
       (update-dfs map adj (+ dist 1)))))
 
-(defun compute-heuristic-map (st)
-  "returns the shortest distance to the closest endposition for a given state"
-  (let ((map (copy-list (track-env (state-track st)))))
-    (loop for end in (track-endpositions (state-track st)) do
-      ;(update-dfs map end 0))  ; DFS IMPLEMENTATION
-      (set2d map end 0) (update-bfs map (adjPoss end) 1)) ; BFS IMPLEMENTATION
-    (dotimes (i (first (track-size (state-track st))))
-      (setf (nth i map) (substitute-if most-positive-fixnum #'notintegerp (nth i map))))
-    map))
-
 ;; Heuristic
 (defun compute-heuristic (st)
   "returns the shortest distance to the closest endposition for a given state"
-  (get2d (compute-heuristic-map st) (state-pos st)))
+  (let ((map (copy-list (track-env (state-track st)))))
+    (loop for end in (track-endpositions (state-track st)) do
+      (set2d map end 0) (update-bfs map (adjPoss end) 1)) ; BFS IMPLEMENTATION
+      ;(update-dfs map end 0))  ; DFS IMPLEMENTATION
+    (dotimes (i (first (track-size (state-track st))))
+      (setf (nth i map) (substitute-if most-positive-fixnum #'notintegerp (nth i map))))
+    (get2d map (state-pos st))))
 
 ;;; A*
 (defun a* (problem)
@@ -182,11 +178,11 @@
         (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
           :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
 
+      (when (null frontier) (return-from aAux nil))
       (let ((best (first frontier)))
         (loop for open in frontier do
           (when (< (node-f open)(node-f best)) (setf best open)))
         
-        (when (null best) (return-from aAux nil))
         (setf frontier (remove best frontier))
         (aAux best)))
 
@@ -202,15 +198,16 @@
 
     (defun bestAux (node)
       (when (funcall isGoal (node-state node)) (return-from bestAux node))
-      (loop for st in (funcall nextStates (node-state node)) when (not (equal (state-pos st) (state-pos (node-state node)))) do
-        (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
-          :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
+      (loop for st in (funcall nextStates (node-state node))
+        when (not (equal (state-pos st) (state-pos (node-state node)))) do
+          (push (make-node :parent node :state st :g (+ (node-g node) (state-cost st))
+            :f (+ (node-g node) (state-cost st) (funcall h st))) frontier))
 
+      (when (null frontier) (return-from bestAux nil))
       (let ((best (first frontier)))
         (loop for open in frontier do
           (when (< (node-f open) (node-f best)) (setf best open)))
         
-        (when (null best) (return-from bestAux nil))
         (setf frontier (remove best frontier))
         (bestAux best)))
 
